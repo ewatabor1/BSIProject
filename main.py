@@ -1,6 +1,8 @@
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdit, QPushButton, QCheckBox
 import sys
+import csv
+import os
 
 class App(QWidget):
     def __init__(self):
@@ -10,17 +12,20 @@ class App(QWidget):
         self.move(200, 50)
         self.setWindowTitle('Bezpieczeństwo systemów informatycznych - Łamanie hasła')
         self.setWindowIcon(QIcon('padlock.png'))
+        self.prefixes_and_suffixes=[]
+        self.answers = []
+        self.questions =[]
 
-        self.questionLabel1 = QLabel('Jak nazywał się Twój pierwszy nauczyciel?')
-        self.questionLabel2 = QLabel('Jakie jest drugie imię twojego ojca?')
-        self.questionLabel3 = QLabel('W jakim mieście się urodziłeś?')
-        self.questionLabel4 = QLabel('Jakie jest twoje ulubione danie?')
-        self.questionLabel5 = QLabel('Jak nazywa się twój zwierzak?')
-        self.questionLabel6 = QLabel('Question')
-        self.questionLabel7 = QLabel('Question')
-        self.questionLabel8 = QLabel('Question')
-        self.questionLabel9 = QLabel('Question')
-        self.questionLabel10 = QLabel('Question')
+        self.questionLabel1 = QLabel('What Is your favorite book?')
+        self.questionLabel2 = QLabel('What is the name of the road you grew up on?')
+        self.questionLabel3 = QLabel('What is your mother’s maiden name?')
+        self.questionLabel4 = QLabel('What was the name of your first/current/favorite pet?')
+        self.questionLabel5 = QLabel('What was the first company that you worked for?')
+        self.questionLabel6 = QLabel('Where did you meet your spouse?')
+        self.questionLabel7 = QLabel('Where did you go to high school/college?')
+        self.questionLabel8 = QLabel('What is your favorite food?')
+        self.questionLabel9 = QLabel('What city were you born in?')
+        self.questionLabel10 = QLabel('Where is your favorite place to vacation?')
 
         self.questionEdit1 = QLineEdit()
         self.questionEdit2 = QLineEdit()
@@ -32,6 +37,17 @@ class App(QWidget):
         self.questionEdit8 = QLineEdit()
         self.questionEdit9 = QLineEdit()
         self.questionEdit10 = QLineEdit()
+
+        self.questions.append(self.questionEdit1)
+        self.questions.append(self.questionEdit2)
+        self.questions.append(self.questionEdit3)
+        self.questions.append(self.questionEdit4)
+        self.questions.append(self.questionEdit5)
+        self.questions.append(self.questionEdit6)
+        self.questions.append(self.questionEdit7)
+        self.questions.append(self.questionEdit8)
+        self.questions.append(self.questionEdit9)
+        self.questions.append(self.questionEdit10)
 
         self.grid = QGridLayout()
         self.grid.setSpacing(10)
@@ -66,8 +82,14 @@ class App(QWidget):
         self.grid.addWidget(self.questionLabel10, 10, 0)
         self.grid.addWidget(self.questionEdit10, 10, 1)
 
-        self.generate_passwords_button = QPushButton('Generuj hasła')
+        self.generate_passwords_button = QPushButton('Generate passwords')
         self.generate_passwords_button.clicked.connect(self.generate_passwords)
+
+        self.add_prefix_suffix_checkbox = QCheckBox('permute using prefixes and suffixes')
+        self.add_specials_checkbox = QCheckBox('permute using special characters ($,@,5,7 etc.)')
+
+        self.grid.addWidget(self.add_prefix_suffix_checkbox, 11, 0)
+        self.grid.addWidget(self.add_specials_checkbox, 11, 1)
         self.grid.addWidget(self.generate_passwords_button, 11, 11)
 
         self.setLayout(self.grid)
@@ -76,17 +98,64 @@ class App(QWidget):
         # sys.exit(app.exec_())
 
 
+    def get_answers(self):
+        for i in self.questions:
+            if len(i.text())>0:
+                self.answers.append(i.text())
+        return self.answers
+
+    def load_prefixes_and_suffixes(self,path='presuf.csv'):
+        with open(path) as csvfile:
+            reader = csv.reader(csvfile)  # change contents to floats
+            for row in reader:  # each row is a list
+                self.prefixes_and_suffixes += row
+
+    def permute_password_using_prefixes_and_suffixes(self, question_answer):
+        results = []
+        for i in self.prefixes_and_suffixes:
+            results.append(i + question_answer)
+            for j in self.prefixes_and_suffixes:
+                results.append(i+question_answer+j)
+                results.append(question_answer + j)
+        return results
+
+    def permute_password_using_special_symbols(self,question_answer):
+        results=[]
+        results.append(question_answer.replace('s','$'))
+        results.append(question_answer.replace('S', '$'))
+        results.append(question_answer.replace('a', '@'))
+        results.append(question_answer.replace('t', '7'))
+        results.append(question_answer.replace('T', '7'))
+        results.append(question_answer.replace('s', '5'))
+        results.append(question_answer.replace('S', '5'))
+        return results
+
+
+    def get_variations_for_word(self,word):
+        results= [word]
+        if self.add_prefix_suffix_checkbox.isChecked():
+            results += self.permute_password_using_prefixes_and_suffixes(word)
+        if self.add_specials_checkbox.isChecked():
+            results += self.permute_password_using_special_symbols(word)
+        return results
 
     def generate_passwords(self):
         print("Generate")
         self.generate_passwords_button.setEnabled(False)
 
-        print("Odpowiedź na pytanie 1: ", self.questionEdit1.text())
-#         Generacja hasła i tak dalej
-#         I na koniec
+        self.load_prefixes_and_suffixes()
 
-#         self.generate_passwords_button.setEnabled(True)
+        textfile = open("passwords.csv", "w")
+        for i in self.get_answers():
+            for j in self.get_variations_for_word(i):
+                textfile.write(j+'\n')
 
+        textfile.close()
+        self.generate_passwords_button.setEnabled(True)
+
+def rreplace(string, old, new, occurrence):
+    li = string.rsplit(old, occurrence)
+    return new.join(li)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
