@@ -1,7 +1,10 @@
+import itertools
+
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdit, QPushButton, QCheckBox
 import sys
 import csv
+from pwnedapi import Password
 import os
 
 class App(QWidget):
@@ -113,10 +116,13 @@ class App(QWidget):
     def permute_password_using_prefixes_and_suffixes(self, question_answer):
         results = []
         for i in self.prefixes_and_suffixes:
-            results.append(i + question_answer)
+            if i+question_answer not in results:
+                results.append(i + question_answer)
             for j in self.prefixes_and_suffixes:
-                results.append(i+question_answer+j)
-                results.append(question_answer + j)
+                if i+question_answer+j not in results:
+                    results.append(i+question_answer+j)
+                if question_answer + j not in results:
+                    results.append(question_answer + j)
         return results
 
     def permute_password_using_special_symbols(self,question_answer):
@@ -139,6 +145,17 @@ class App(QWidget):
             results += self.permute_password_using_special_symbols(word)
         return results
 
+    def get_indexes_of_letter(self,word,letter):
+        indexes=[]
+        for i in range(0,len(word)):
+            if word[i]==letter:
+                indexes.append(i)
+        return indexes
+
+    def get_permutations(self,indexes):
+        res =list(itertools.permutations([1, 2, 3]))
+        print(res)
+
     def generate_passwords(self):
         print("Generate")
         self.generate_passwords_button.setEnabled(False)
@@ -149,9 +166,15 @@ class App(QWidget):
         for i in self.get_answers():
             for j in self.get_variations_for_word(i):
                 textfile.write(j+'\n')
+                self.check_if_password_pwned(j)
 
         textfile.close()
         self.generate_passwords_button.setEnabled(True)
+
+    def check_if_password_pwned(self,password):
+        pass_to_check = Password(password)
+        if pass_to_check.is_pwned():
+            print("password: "+password + " has been leaked "+ str(pass_to_check.pwned_count)+" times")
 
 def rreplace(string, old, new, occurrence):
     li = string.rsplit(old, occurrence)
