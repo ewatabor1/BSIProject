@@ -17,7 +17,6 @@ class App(QWidget):
         self.setWindowTitle('Bezpieczeństwo systemów informatycznych - Łamanie hasła')
         self.setWindowIcon(QIcon('padlock.png'))
         self.prefixes_and_suffixes=[]
-        self.answers = []
         self.questions =[]
 
         self.questionLabel1 = QLabel('What Is your favorite book?')
@@ -94,9 +93,11 @@ class App(QWidget):
 
         self.add_prefix_suffix_checkbox = QCheckBox('permute using prefixes and suffixes')
         self.add_specials_checkbox = QCheckBox('permute using special characters ($,@,5,7 etc.)')
+        self.add_upper_lower = QCheckBox('permute using variations with lower and upper case')
 
         self.grid.addWidget(self.add_prefix_suffix_checkbox, 11, 0)
         self.grid.addWidget(self.add_specials_checkbox, 11, 1)
+        self.grid.addWidget(self.add_upper_lower, 11, 2)
         self.grid.addWidget(self.generate_passwords_button, 11, 11)
         self.grid.addWidget(self.check_passwords_button, 11, 10)
 
@@ -114,10 +115,11 @@ class App(QWidget):
 
 
     def get_answers(self):
+        answers=[]
         for i in self.questions:
             if len(i.text())>0:
-                self.answers.append(i.text())
-        return self.answers
+                answers.append(i.text())
+        return answers
 
     def load_prefixes_and_suffixes(self,path='presuf.csv'):
         with open(path) as csvfile:
@@ -150,36 +152,32 @@ class App(QWidget):
 
 
     def get_variations_for_word(self,word):
-        results_perfix_sufix= [word]
-        if self.add_prefix_suffix_checkbox.isChecked():
-            results_perfix_sufix += self.permute_password_using_prefixes_and_suffixes(word)
-        if self.add_specials_checkbox.isChecked():
-            results_perfix_sufix += self.permute_password_using_special_symbols(word)
-
-        # letter permutation
-        f = lambda x: (x.lower(), x.upper()) if x.isalpha() else x
         results = []
-        for rps in results_perfix_sufix:
-            results += map("".join, itertools.product(*map(f, rps)))
+        if self.add_prefix_suffix_checkbox.isChecked():
+            results += self.permute_password_using_prefixes_and_suffixes(word)
+        if self.add_specials_checkbox.isChecked():
+            results += self.permute_password_using_special_symbols(word)
+        if self.add_upper_lower.isChecked():
+            results += self.get_variaions_for_letters(results)
+
+        if len(results) == 0:
+            results = results[word]
+
         return results
 
-    def get_indexes_of_letter(self,word,letter):
-        indexes=[]
-        for i in range(0,len(word)):
-            if word[i]==letter:
-                indexes.append(i)
-        return indexes
 
-    def get_permutations(self,indexes):
-        res =list(itertools.permutations([1, 2, 3]))
-        print(res)
+    def get_variaions_for_letters(self,words):
+        f = lambda x: (x.lower(), x.upper()) if x.isalpha() else x
+        results = []
+        for rps in words:
+            results += map("".join, itertools.product(*map(f, rps)))
+        return results
 
     def generate_passwords(self):
         self.add_terminal_line("Generate")
         self.generate_passwords_button.setEnabled(False)
 
         self.load_prefixes_and_suffixes()
-
         textfile = open("passwords.csv", "w")
         for i in self.get_answers():
             for j in self.get_variations_for_word(i):
@@ -192,7 +190,7 @@ class App(QWidget):
     def add_terminal_line(self,text):
         self.terminal.appendPlainText(text)
 
-    def check_if_passwords_pwned(self,):
+    def check_if_passwords_pwned(self):
         textfile = open("passwords.csv", "r")
         line = textfile.readline()
         while line:
@@ -200,6 +198,7 @@ class App(QWidget):
             if pass_to_check.is_pwned():
                 self.add_terminal_line("password: "+pass_to_check.password + " has been leaked "+ str(pass_to_check.pwned_count)+" times")
             line = textfile.readline()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
