@@ -1,7 +1,8 @@
 import itertools
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdit, QPushButton, QCheckBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdit, QPushButton, QCheckBox, \
+    QPlainTextEdit
 import sys
 import csv
 from pwnedapi import Password
@@ -11,7 +12,7 @@ class App(QWidget):
     def __init__(self):
 
         super().__init__()
-        self.resize(800, 800)
+        self.resize(800, 400)
         self.move(200, 50)
         self.setWindowTitle('Bezpieczeństwo systemów informatycznych - Łamanie hasła')
         self.setWindowIcon(QIcon('padlock.png'))
@@ -88,12 +89,23 @@ class App(QWidget):
         self.generate_passwords_button = QPushButton('Generate passwords')
         self.generate_passwords_button.clicked.connect(self.generate_passwords)
 
+        self.check_passwords_button = QPushButton('Check if passwords were leaked')
+        self.check_passwords_button.clicked.connect(self.check_if_passwords_pwned)
+
         self.add_prefix_suffix_checkbox = QCheckBox('permute using prefixes and suffixes')
         self.add_specials_checkbox = QCheckBox('permute using special characters ($,@,5,7 etc.)')
 
         self.grid.addWidget(self.add_prefix_suffix_checkbox, 11, 0)
         self.grid.addWidget(self.add_specials_checkbox, 11, 1)
         self.grid.addWidget(self.generate_passwords_button, 11, 11)
+        self.grid.addWidget(self.check_passwords_button, 11, 10)
+
+        self.terminal_label = QLabel('Output:')
+        self.grid.addWidget(self.terminal_label,12,0)
+
+        self.terminal = QPlainTextEdit()
+        self.terminal.setReadOnly(True)
+        self.grid.addWidget(self.terminal,13,0,-1,-1)
 
         self.setLayout(self.grid)
 
@@ -157,7 +169,7 @@ class App(QWidget):
         print(res)
 
     def generate_passwords(self):
-        print("Generate")
+        self.add_terminal_line("Generate")
         self.generate_passwords_button.setEnabled(False)
 
         self.load_prefixes_and_suffixes()
@@ -166,19 +178,21 @@ class App(QWidget):
         for i in self.get_answers():
             for j in self.get_variations_for_word(i):
                 textfile.write(j+'\n')
-                self.check_if_password_pwned(j)
 
         textfile.close()
         self.generate_passwords_button.setEnabled(True)
 
-    def check_if_password_pwned(self,password):
-        pass_to_check = Password(password)
-        if pass_to_check.is_pwned():
-            print("password: "+password + " has been leaked "+ str(pass_to_check.pwned_count)+" times")
+    def add_terminal_line(self,text):
+        self.terminal.appendPlainText(text)
 
-def rreplace(string, old, new, occurrence):
-    li = string.rsplit(old, occurrence)
-    return new.join(li)
+    def check_if_passwords_pwned(self,):
+        textfile = open("passwords.csv", "r")
+        line = textfile.readline()
+        while line:
+            pass_to_check = Password(str(line).removesuffix('\n'))
+            if pass_to_check.is_pwned():
+                self.add_terminal_line("password: "+pass_to_check.password + " has been leaked "+ str(pass_to_check.pwned_count)+" times")
+            line = textfile.readline()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
