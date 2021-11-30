@@ -150,11 +150,17 @@ class App(QWidget):
 
 
     def get_variations_for_word(self,word):
-        results= [word]
+        results_perfix_sufix= [word]
         if self.add_prefix_suffix_checkbox.isChecked():
-            results += self.permute_password_using_prefixes_and_suffixes(word)
+            results_perfix_sufix += self.permute_password_using_prefixes_and_suffixes(word)
         if self.add_specials_checkbox.isChecked():
-            results += self.permute_password_using_special_symbols(word)
+            results_perfix_sufix += self.permute_password_using_special_symbols(word)
+
+        # letter permutation
+        f = lambda x: (x.lower(), x.upper()) if x.isalpha() else x
+        results = []
+        for rps in results_perfix_sufix:
+            results += map("".join, itertools.product(*map(f, rps)))
         return results
 
     def get_indexes_of_letter(self,word,letter):
@@ -181,6 +187,7 @@ class App(QWidget):
 
         textfile.close()
         self.generate_passwords_button.setEnabled(True)
+        print("Done")
 
     def add_terminal_line(self,text):
         self.terminal.appendPlainText(text)
