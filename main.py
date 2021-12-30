@@ -94,10 +94,12 @@ class App(QWidget):
         self.add_prefix_suffix_checkbox = QCheckBox('permute using prefixes and suffixes')
         self.add_specials_checkbox = QCheckBox('permute using special characters ($,@,5,7 etc.)')
         self.add_upper_lower = QCheckBox('permute using variations with lower and upper case')
+        self.add_permutation_of_answers = QCheckBox('permute (combine) answers')
 
         self.grid.addWidget(self.add_prefix_suffix_checkbox, 11, 0)
         self.grid.addWidget(self.add_specials_checkbox, 11, 1)
         self.grid.addWidget(self.add_upper_lower, 11, 2)
+        self.grid.addWidget(self.add_permutation_of_answers, 11, 3)
         self.grid.addWidget(self.generate_passwords_button, 11, 11)
         self.grid.addWidget(self.check_passwords_button, 11, 10)
 
@@ -148,7 +150,7 @@ class App(QWidget):
         results.append(question_answer.replace('T', '7'))
         results.append(question_answer.replace('s', '5'))
         results.append(question_answer.replace('S', '5'))
-        return results
+        return list(dict.fromkeys(results))
 
 
     def get_variations_for_word(self,word):
@@ -161,7 +163,7 @@ class App(QWidget):
             results += self.get_variaions_for_letters(results)
 
         if len(results) == 0:
-            results = results[word]
+            results.append(word)
 
         return results
 
@@ -179,7 +181,12 @@ class App(QWidget):
 
         self.load_prefixes_and_suffixes()
         textfile = open("passwords.csv", "w")
-        for i in self.get_answers():
+
+        if self.add_permutation_of_answers.isChecked():
+            answers = self.combine_permute_passwords(self.get_answers())
+        else:
+            answers = self.get_answers()
+        for i in answers:
             for j in self.get_variations_for_word(i):
                 textfile.write(j+'\n')
 
@@ -189,6 +196,13 @@ class App(QWidget):
 
     def add_terminal_line(self,text):
         self.terminal.appendPlainText(text)
+
+    def combine_permute_passwords(self, answers):
+        result = []
+        for i in range(1, len(answers) + 1):
+            for group in itertools.permutations(answers, i):
+                result.append(''.join(group))
+        return result
 
     def check_if_passwords_pwned(self):
         textfile = open("passwords.csv", "r")
