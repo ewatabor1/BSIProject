@@ -55,35 +55,45 @@ class App(QWidget):
         self.grid = QGridLayout()
         self.grid.setSpacing(10)
 
-        self.grid.addWidget(self.questionLabel1, 1, 0)
-        self.grid.addWidget(self.questionEdit1, 1, 1)
+        row = 1
+        self.grid.addWidget(self.questionLabel1, row, 0)
+        self.grid.addWidget(self.questionEdit1, row, 1)
 
-        self.grid.addWidget(self.questionLabel2, 2, 0)
-        self.grid.addWidget(self.questionEdit2, 2, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel2, row, 0)
+        self.grid.addWidget(self.questionEdit2, row, 1)
 
-        self.grid.addWidget(self.questionLabel3, 3, 0)
-        self.grid.addWidget(self.questionEdit3, 3, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel3, row, 0)
+        self.grid.addWidget(self.questionEdit3, row, 1)
 
-        self.grid.addWidget(self.questionLabel4, 4, 0)
-        self.grid.addWidget(self.questionEdit4, 4, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel4, row, 0)
+        self.grid.addWidget(self.questionEdit4, row, 1)
 
-        self.grid.addWidget(self.questionLabel5, 5, 0)
-        self.grid.addWidget(self.questionEdit5, 5, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel5, row, 0)
+        self.grid.addWidget(self.questionEdit5, row, 1)
 
-        self.grid.addWidget(self.questionLabel6, 6, 0)
-        self.grid.addWidget(self.questionEdit6, 6, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel6, row, 0)
+        self.grid.addWidget(self.questionEdit6, row, 1)
 
-        self.grid.addWidget(self.questionLabel7, 7, 0)
-        self.grid.addWidget(self.questionEdit7, 7, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel7, row, 0)
+        self.grid.addWidget(self.questionEdit7, row, 1)
 
-        self.grid.addWidget(self.questionLabel8, 8, 0)
-        self.grid.addWidget(self.questionEdit8, 8, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel8, row, 0)
+        self.grid.addWidget(self.questionEdit8, row, 1)
 
-        self.grid.addWidget(self.questionLabel9, 9, 0)
-        self.grid.addWidget(self.questionEdit9, 9, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel9, row, 0)
+        self.grid.addWidget(self.questionEdit9, row, 1)
 
-        self.grid.addWidget(self.questionLabel10, 10, 0)
-        self.grid.addWidget(self.questionEdit10, 10, 1)
+        row = row + 1
+        self.grid.addWidget(self.questionLabel10, row, 0)
+        self.grid.addWidget(self.questionEdit10, row, 1)
 
         self.generate_passwords_button = QPushButton('Generate passwords')
         self.generate_passwords_button.clicked.connect(self.generate_passwords)
@@ -95,20 +105,31 @@ class App(QWidget):
         self.add_specials_checkbox = QCheckBox('permute using special characters ($,@,5,7 etc.)')
         self.add_upper_lower = QCheckBox('permute using variations with lower and upper case')
         self.add_permutation_of_answers = QCheckBox('permute (combine) answers')
+        self.add_first_capital_letter = QCheckBox('change first letter to capital')
+        self.add_last_capital_letter = QCheckBox('change last letter to capital')
+        self.add_camel_case = QCheckBox('change to camel case')
 
-        self.grid.addWidget(self.add_prefix_suffix_checkbox, 11, 0)
-        self.grid.addWidget(self.add_specials_checkbox, 11, 1)
-        self.grid.addWidget(self.add_upper_lower, 11, 2)
-        self.grid.addWidget(self.add_permutation_of_answers, 11, 3)
-        self.grid.addWidget(self.generate_passwords_button, 11, 11)
-        self.grid.addWidget(self.check_passwords_button, 11, 10)
+        row = row + 1
+        self.grid.addWidget(self.add_prefix_suffix_checkbox, row, 0)
+        self.grid.addWidget(self.add_specials_checkbox, row, 1)
+        self.grid.addWidget(self.add_upper_lower, row, 2)
+        self.grid.addWidget(self.add_permutation_of_answers, row, 3)
 
+        row = row + 1
+        self.grid.addWidget(self.add_first_capital_letter, row, 0)
+        self.grid.addWidget(self.add_last_capital_letter, row, 1)
+        self.grid.addWidget(self.add_camel_case, row, 2)
+        self.grid.addWidget(self.generate_passwords_button, row, 11)
+        self.grid.addWidget(self.check_passwords_button, row, 10)
+
+        row = row + 1
         self.terminal_label = QLabel('Output:')
-        self.grid.addWidget(self.terminal_label,12,0)
+        self.grid.addWidget(self.terminal_label, row, 0)
 
+        row = row + 1
         self.terminal = QPlainTextEdit()
         self.terminal.setReadOnly(True)
-        self.grid.addWidget(self.terminal,13,0,-1,-1)
+        self.grid.addWidget(self.terminal, row, 0, -1, -1)
 
         self.setLayout(self.grid)
 
@@ -121,6 +142,8 @@ class App(QWidget):
         for i in self.questions:
             if len(i.text())>0:
                 answers.append(i.text())
+        if self.add_permutation_of_answers.isChecked():
+            answers = self.combine_permute_passwords(answers)
         return answers
 
     def load_prefixes_and_suffixes(self,path='presuf.csv'):
@@ -160,19 +183,47 @@ class App(QWidget):
         if self.add_specials_checkbox.isChecked():
             results += self.permute_password_using_special_symbols(word)
         if self.add_upper_lower.isChecked():
-            results += self.get_variaions_for_letters(results)
+            results += self.get_variaions_for_letters(word)
 
         if len(results) == 0:
             results.append(word)
 
-        return results
+        if self.add_camel_case.isChecked():
+            results += self.add_change_to_camel_case(results)
+        if self.add_first_capital_letter.isChecked():
+            results += self.add_change_first_letter_to_capital(results)
+        if self.add_last_capital_letter.isChecked():
+            results += self.add_change_last_letter_to_capital(results)
+
+        return list(dict.fromkeys(results))
 
 
-    def get_variaions_for_letters(self,words):
+    def get_variaions_for_letters(self,word):
         f = lambda x: (x.lower(), x.upper()) if x.isalpha() else x
         results = []
-        for rps in words:
-            results += map("".join, itertools.product(*map(f, rps)))
+        # for rps in words:
+        #     results += map("".join, itertools.product(*map(f, rps)))
+        results += map("".join, itertools.product(*map(f, word)))
+        return results
+
+    def add_change_first_letter_to_capital(self, words):
+        results = []
+        for word in words:
+            results.append(word[0].upper() + word[1:])
+        return results
+
+    def add_change_last_letter_to_capital(self, words):
+        results = []
+        for word in words:
+            results.append(word[:-1] + word[-1].upper())
+        return results
+
+    def add_change_to_camel_case(self, words):
+        results = []
+        for word in words:
+            results.append(word.title())
+            if word not in results:
+                results.append(word)
         return results
 
     def generate_passwords(self):
@@ -182,11 +233,7 @@ class App(QWidget):
         self.load_prefixes_and_suffixes()
         textfile = open("passwords.csv", "w")
 
-        if self.add_permutation_of_answers.isChecked():
-            answers = self.combine_permute_passwords(self.get_answers())
-        else:
-            answers = self.get_answers()
-        for i in answers:
+        for i in self.get_answers():
             for j in self.get_variations_for_word(i):
                 textfile.write(j+'\n')
 
