@@ -222,8 +222,6 @@ class App(QWidget):
         results = []
         for word in words:
             results.append(word.title())
-            if word not in results:
-                results.append(word)
         return results
 
     def generate_passwords(self):
