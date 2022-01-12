@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QLineEdi
 import sys
 import csv
 from pwnedapi import Password
-import os
 
 class App(QWidget):
     def __init__(self):
@@ -225,19 +224,23 @@ class App(QWidget):
         return results
 
     def generate_passwords(self):
-        self.add_terminal_line("Generate")
+        self.add_terminal_line("Generating passwords...")
         self.generate_passwords_button.setEnabled(False)
 
         self.load_prefixes_and_suffixes()
-        textfile = open("passwords.csv", "w")
+        try:
+            textfile = open("passwords.csv", "w")
 
-        for i in self.get_answers():
-            for j in self.get_variations_for_word(i):
-                textfile.write(j+'\n')
+            for i in self.get_answers():
+                for j in self.get_variations_for_word(i):
+                    textfile.write(j+'\n')
 
-        textfile.close()
+            textfile.close()
+            self.add_terminal_line("Done generating passwords.")
+        except:
+            self.add_terminal_line("Something went wrong when generating passwords. Please check if passwords.csv is not open by another program.")
+
         self.generate_passwords_button.setEnabled(True)
-        print("Done")
 
     def add_terminal_line(self,text):
         self.terminal.appendPlainText(text)
